@@ -70,7 +70,7 @@ class Transit {
         event.preventDefault(); // Prevent default browser behavior
 
         const element = event.target.closest(`[on-${event.type}]`);
-        if (!element) return console.error('No element found for event type:', event.type);
+        if (!element || element.classList.contains('processing')) return;  // Prevent if element is already processing
 
         // Execute all hooks associated with 'beforeRequest'
         const shouldProceed = await this.hooks.doAction('beforeRequest', element, event);
@@ -100,13 +100,20 @@ class Transit {
         }
     }
 
+
     /**
      * Toggles a 'processing' state on the element and any linked elements (via 'map' attribute).
+     * It also disables the element to prevent further interactions.
      * @param {HTMLElement} element - The element being processed.
      * @param {boolean} isProcessing - Whether the element is in a processing state.
      */
     toggleProcessingState(element, isProcessing) {
         element.classList.toggle('processing', isProcessing);
+
+        if (element.tagName === 'FORM') {
+            element.querySelectorAll('[type="submit"]').forEach(button => button.disabled = isProcessing);
+        }
+
         const mappedElement = document.querySelector(`[map="${element.getAttribute('key')}"]`);
         if (mappedElement) mappedElement.classList.toggle('processing', isProcessing);
     }
